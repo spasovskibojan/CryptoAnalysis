@@ -20,30 +20,48 @@ except ImportError:
 def wake_up_services():
     """
     Wake up TA and FA services if they're sleeping (Render free tier).
-    Makes parallel health check calls with generous timeout.
-    Returns True if services respond, False otherwise.
+    Retries until services respond with 200 OK or max attempts reached.
     """
-    def ping_service(url, name):
-        try:
-            print(f"DEBUG: Waking up {name} at {url}")
-            response = requests.get(url, timeout=45)  # 45s for cold start
-            print(f"DEBUG: {name} responded with status {response.status_code}")
-            return True
-        except Exception as e:
-            print(f"DEBUG: {name} failed to wake: {str(e)}")
-            return False
+    import time
+    
+    def ping_until_ready(url, name, max_attempts=3, delay=5):
+        """Ping service until it responds with 200 or max attempts reached."""
+        for attempt in range(max_attempts):
+            try:
+                print(f"DEBUG: Waking {name} (attempt {attempt+1}/{max_attempts}) at {url}")
+                response = requests.get(url, timeout=30)
+                
+                if response.status_code == 200:
+                    print(f"DEBUG: {name} is READY (200 OK)")
+                    return True
+                else:
+                    print(f"DEBUG: {name} returned {response.status_code}, retrying in {delay}s...")
+                    if attempt < max_attempts - 1:
+                        time.sleep(delay)
+                        
+            except requests.exceptions.Timeout:
+                print(f"DEBUG: {name} timeout (still starting up), retrying in {delay}s...")
+                if attempt < max_attempts - 1:
+                    time.sleep(delay)
+            except Exception as e:
+                print(f"DEBUG: {name} error: {str(e)}, retrying in {delay}s...")
+                if attempt < max_attempts - 1:
+                    time.sleep(delay)
+        
+        print(f"DEBUG: {name} NOT ready after {max_attempts} attempts")
+        return False
     
     # Ping both services in parallel
     with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
-        ta_future = executor.submit(ping_service, f"{TA_SERVICE_URL}/", "TA Service")
-        fa_future = executor.submit(ping_service, f"{FA_SERVICE_URL}/sentiment/BTC-USD", "FA Service")
+        ta_future = executor.submit(ping_until_ready, f"{TA_SERVICE_URL}/", "TA Service")
+        fa_future = executor.submit(ping_until_ready, f"{FA_SERVICE_URL}/sentiment/BTC-USD", "FA Service")
         
         # Wait for both to complete
         ta_ready = ta_future.result()
         fa_ready = fa_future.result()
     
     print(f"DEBUG: Services ready - TA: {ta_ready}, FA: {fa_ready}")
-    return ta_ready or fa_ready  # At least one should be ready
+    return ta_ready or fa_ready
 
 class CryptoMarketFacade:
     def __init__(self, data_dir):
