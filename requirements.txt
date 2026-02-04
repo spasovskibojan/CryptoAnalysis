@@ -1,0 +1,14 @@
+django
+pandas
+requests
+vaderSentiment
+ta
+yfinance
+uvicorn
+fastapi
+python-multipart
+
+# LSTM Prerequisites - додадено за AI предвидување
+tensorflow>=2.13.0
+numpy>=1.24.0
+scikit-learn>=1.3.0

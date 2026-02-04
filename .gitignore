@@ -1,0 +1,54 @@
+# Python Virtual Environment
+.venv/
+venv/
+env/
+ENV/
+
+# Python Cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Django
+*.log
+db.sqlite3
+db.sqlite3-journal
+*.pot
+*.pyc
+/static/
+/media/
+
+# LSTM Models Cache
+models/
+*.keras
+*.h5
+*.pkl
+
+# Environment Variables
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Data (optional - uncomment if data should not be in repo)
+# data/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+*.ipynb
+
+# Distribution / Packaging
+*.egg-info/
+dist/
+build/

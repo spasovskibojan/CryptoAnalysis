@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>{{ symbol }} Анализа</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js/dist/chart.umd.js"></script>
+  <script
+    src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+  <script src="https://www.chartjs.org/chartjs-chart-financial/chartjs-chart-financial.js"></script>
+
+  <style>
+    .text-green {
+      color: #198754;
+      font-weight: bold;
+    }
+
+    .text-red {
+      color: #dc3545;
+      font-weight: bold;
+    }
+
+    .chart-container {
+      position: relative;
+      height: 400px;
+      width: 100%;
+    }
+
+    .ai-card {
+      border-left: 5px solid;
+    }
+
+    .ai-card.success {
+      border-left-color: #198754;
+    }
+
+    .ai-card.danger {
+      border-left-color: #dc3545;
+    }
+
+    .ai-card.secondary {
+      border-left-color: #6c757d;
+    }
+  </style>
+</head>
+
+<body class="bg-light">
+
+  <div class="container mt-4 mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h2 class="fw-bold">{{ symbol }} <span class="text-muted fs-5">Анализа</span></h2>
+      </div>
+      <a href="/" class="btn btn-outline-secondary">← Назад</a>
+    </div>
+    <!-- TECHNICAL BUY / SELL / HOLD SIGNALS -->
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-white">
+        <h5 class="mb-0">📈 Технички сигнали (преглед)</h5>
+      </div>
+      <div class="card-body text-center">
+        <div class="row">
+
+          <div class="col-md-4">
+            <h6>1 Ден</h6>
+            <span class="badge fs-6
+                    {% if ta_signals.1d == 'BUY' %}bg-success
+                    {% elif ta_signals.1d == 'SELL' %}bg-danger
+                    {% else %}bg-secondary{% endif %}">
+              {{ ta_signals.1d }}
+            </span>
+          </div>
+
+          <div class="col-md-4">
+            <h6>1 Недела</h6>
+            <span class="badge fs-6
+                    {% if ta_signals.1w == 'BUY' %}bg-success
+                    {% elif ta_signals.1w == 'SELL' %}bg-danger
+                    {% else %}bg-secondary{% endif %}">
+              {{ ta_signals.1w }}
+            </span>
+          </div>
+
+          <div class="col-md-4">
+            <h6>1 Месец</h6>
+            <span class="badge fs-6
+                    {% if ta_signals.1m == 'BUY' %}bg-success
+                    {% elif ta_signals.1m == 'SELL' %}bg-danger
+                    {% else %}bg-secondary{% endif %}">
+              {{ ta_signals.1m }}
+            </span>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">📊 Техничка Анализа (Цена & Индикатори)</h5>
+        <div class="btn-group btn-group-sm">
+          <a href="?timeframe=1m" class="btn btn-outline-primary {% if timeframe == '1m' %}active{% endif %}">1
+            Месец</a>
+          <a href="?timeframe=1y" class="btn btn-outline-primary {% if timeframe == '1y' %}active{% endif %}">1
+            Година</a>
+          <a href="?timeframe=10y" class="btn btn-outline-primary {% if timeframe == '10y' %}active{% endif %}">Max</a>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="chart-container">
+          <canvas id="mainChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- TECHNICAL SIGNAL BREAKDOWN -->
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-white">
+        <h5 class="mb-0">🧾 Детален преглед на индикатори</h5>
+      </div>
+
+      <div class="card-body">
+        <ul class="nav nav-tabs" id="taTabs" role="tablist">
+          <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="tab-1d" data-bs-toggle="tab" data-bs-target="#pane-1d" type="button"
+              role="tab">
+              1 Ден
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="tab-1w" data-bs-toggle="tab" data-bs-target="#pane-1w" type="button"
+              role="tab">
+              1 Недела
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="tab-1m" data-bs-toggle="tab" data-bs-target="#pane-1m" type="button"
+              role="tab">
+              1 Месец
+            </button>
+          </li>
+        </ul>
+
+        <div class="tab-content pt-3">
+
+          <!-- 1D -->
+          <div class="tab-pane fade show active" id="pane-1d" role="tabpanel">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <div>
+                <span class="me-2">Overall:</span>
+                <span class="badge fs-6
+              {% if ta_details.1d.overall_signal == 'BUY' %}bg-success
+              {% elif ta_details.1d.overall_signal == 'SELL' %}bg-danger
+              {% else %}bg-secondary{% endif %}">
+                  {{ ta_details.1d.overall_signal }}
+                </span>
+              </div>
+              <div class="text-muted small">Score: {{ ta_details.1d.overall_score }}</div>
+            </div>
+
+            <div class="table-responsive">
+              <table class="table table-sm table-striped align-middle">
+                <thead class="table-dark">
+                  <tr>
+                    <th>Индикатор</th>
+                    <th>Сигнал</th>
+                    <th>Score</th>
+                    <th>Вредности</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for s in ta_details.1d.signals %}
+                  <tr>
+                    <td class="fw-semibold">{{ s.name }}</td>
+                    <td>
+                      <span class="badge
+                    {% if s.signal == 'BUY' %}bg-success
+                    {% elif s.signal == 'SELL' %}bg-danger
+                    {% else %}bg-secondary{% endif %}">
+                        {{ s.signal }}
+                      </span>
+                    </td>
+                    <td>{{ s.score }}</td>
+                    <td class="small">
+                      {% for k, v in s.values.items %}
+                      <div><span class="text-muted">{{ k }}:</span> {{ v }}</div>
+                      {% endfor %}
+                    </td>
+                  </tr>
+                  {% empty %}
+                  <tr>
+                    <td colspan="4" class="text-muted">Нема податоци.</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- 1W -->
+          <div class="tab-pane fade" id="pane-1w" role="tabpanel">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <div>
+                <span class="me-2">Overall:</span>
+                <span class="badge fs-6
+              {% if ta_details.1w.overall_signal == 'BUY' %}bg-success
+              {% elif ta_details.1w.overall_signal == 'SELL' %}bg-danger
+              {% else %}bg-secondary{% endif %}">
+                  {{ ta_details.1w.overall_signal }}
+                </span>
+              </div>
+              <div class="text-muted small">Score: {{ ta_details.1w.overall_score }}</div>
+            </div>
+
+            <div class="table-responsive">
+              <table class="table table-sm table-striped align-middle">
+                <thead class="table-dark">
+                  <tr>
+                    <th>Индикатор</th>
+                    <th>Сигнал</th>
+                    <th>Score</th>
+                    <th>Вредности</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for s in ta_details.1w.signals %}
+                  <tr>
+                    <td class="fw-semibold">{{ s.name }}</td>
+                    <td>
+                      <span class="badge
+                    {% if s.signal == 'BUY' %}bg-success
+                    {% elif s.signal == 'SELL' %}bg-danger
+                    {% else %}bg-secondary{% endif %}">
+                        {{ s.signal }}
+                      </span>
+                    </td>
+                    <td>{{ s.score }}</td>
+                    <td class="small">
+                      {% for k, v in s.values.items %}
+                      <div><span class="text-muted">{{ k }}:</span> {{ v }}</div>
+                      {% endfor %}
+                    </td>
+                  </tr>
+                  {% empty %}
+                  <tr>
+                    <td colspan="4" class="text-muted">Нема податоци.</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- 1M -->
+          <div class="tab-pane fade" id="pane-1m" role="tabpanel">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <div>
+                <span class="me-2">Overall:</span>
+                <span class="badge fs-6
+              {% if ta_details.1m.overall_signal == 'BUY' %}bg-success
+              {% elif ta_details.1m.overall_signal == 'SELL' %}bg-danger
+              {% else %}bg-secondary{% endif %}">
+                  {{ ta_details.1m.overall_signal }}
+                </span>
+              </div>
+              <div class="text-muted small">Score: {{ ta_details.1m.overall_score }}</div>
+            </div>
+
+            <div class="table-responsive">
+              <table class="table table-sm table-striped align-middle">
+                <thead class="table-dark">
+                  <tr>
+                    <th>Индикатор</th>
+                    <th>Сигнал</th>
+                    <th>Score</th>
+                    <th>Вредности</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for s in ta_details.1m.signals %}
+                  <tr>
+                    <td class="fw-semibold">{{ s.name }}</td>
+                    <td>
+                      <span class="badge
+                    {% if s.signal == 'BUY' %}bg-success
+                    {% elif s.signal == 'SELL' %}bg-danger
+                    {% else %}bg-secondary{% endif %}">
+                        {{ s.signal }}
+                      </span>
+                    </td>
+                    <td>{{ s.score }}</td>
+                    <td class="small">
+                      {% for k, v in s.values.items %}
+                      <div><span class="text-muted">{{ k }}:</span> {{ v }}</div>
+                      {% endfor %}
+                    </td>
+                  </tr>
+                  {% empty %}
+                  <tr>
+                    <td colspan="4" class="text-muted">Нема податоци.</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+
+
+    <div class="row mb-4">
+      <div class="col-md-8">
+        <div class="card shadow-sm h-100 ai-card {{ sentiment.prediction_color|default:'secondary' }}">
+          <div class="card-header bg-white">
+            <h5 class="mb-0">🤖 AI Sentiment (NLP Анализа на Вести)</h5>
+          </div>
+          <div class="card-body">
+            {% if sentiment %}
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h4 class="text-{{ sentiment.prediction_color }}">
+                {{ sentiment.prediction }}
+              </h4>
+              <span class="badge bg-dark">Score: {{ sentiment.score }}</span>
+            </div>
+
+            <h6>Последни вести (CryptoCompare):</h6>
+            <ul class="list-group list-group-flush small">
+              {% for news in sentiment.news %}
+              <li class="list-group-item d-flex justify-content-between align-items-center">
+                <span>{{ news.title|truncatechars:60 }} <i class="text-muted">({{ news.source }})</i></span>
+                <span class="{{ news.color }} fw-bold">{{ news.label }}</span>
+              </li>
+              {% endfor %}
+            </ul>
+            {% else %}
+            <p class="text-muted">Нема доволно податоци за сентимент анализа во моментов.</p>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-4">
+        <div class="card shadow-sm h-100">
+          <div class="card-header bg-white">
+            <h5 class="mb-0">⛓️ On-Chain Метрики</h5>
+          </div>
+          <div class="card-body p-0">
+            <ul class="list-group list-group-flush">
+
+              <li class="list-group-item d-flex justify-content-between align-items-center">
+                <span class="text-muted">{{ on_chain.hash_label }}:</span>
+                <span class="fw-bold">{{ on_chain.hash_value }}</span>
+              </li>
+
+              <li class="list-group-item d-flex justify-content-between align-items-center">
+                <span class="text-muted">{{ on_chain.trans_label }}:</span>
+                <span class="fw-bold small">{{ on_chain.trans_value }}</span>
+              </li>
+
+              <li class="list-group-item d-flex justify-content-between align-items-center">
+                <span class="text-muted">Exchange Flows:</span>
+                <span class="fw-bold">{{ on_chain.exchange_flows }}</span>
+              </li>
+
+              <li class="list-group-item d-flex justify-content-between align-items-center">
+                <span class="text-muted">MVRV Ratio:</span>
+                <span class="badge bg-info text-dark">{{ on_chain.mvrv }}</span>
+              </li>
+
+              <li class="list-group-item d-flex justify-content-between align-items-center">
+                <span class="text-muted">NVT Ratio:</span>
+                <span class="badge bg-secondary">{{ on_chain.nvt_ratio }}</span>
+              </li>
+
+              <li class="list-group-item d-flex justify-content-between align-items-center">
+                <span class="text-muted" title="Total Value Locked in DeFi">TVL (DeFi):</span>
+                <span class="fw-bold text-primary">{{ on_chain.tvl }}</span>
+              </li>
+
+              <li class="list-group-item d-flex justify-content-between align-items-center">
+                <span class="text-muted">Whale Activity:</span>
+                <span class="fw-bold">{{ on_chain.whale_status }}</span>
+              </li>
+
+              <li class="list-group-item d-flex justify-content-between align-items-center">
+                <span class="text-muted">Dominance:</span>
+                <span class="fw-bold">{{ on_chain.dominance }}</span>
+              </li>
+            </ul>
+          </div>
+          <div class="card-footer bg-light py-2">
+            <small class="text-muted" style="font-size: 0.75rem;">
+              Data sources: Blockchain.com, CoinGecko, DeFiLlama.
+              <br>Metrics calculated in real-time.
+            </small>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LSTM AI PREDICTION -->
+    <div class="card shadow-sm mb-4 border-primary">
+      <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">🔮 Интерактивно AI Предвидување</h5>
+      </div>
+      <div class="card-body">
+        <form method="GET" action="" class="row g-3 align-items-end">
+          <input type="hidden" name="timeframe" value="{{ timeframe }}">
+          <input type="hidden" name="predict_symbol" value="{{ symbol }}">
+
+          <div class="col-md-8">
+            <label class="form-label">Датум за предвидување за {{ symbol }}</label>
+            <input type="date" name="predict_date" class="form-control" value="{{ request.GET.predict_date }}" required>
+          </div>
+          <div class="col-md-4">
+            <button type="submit" class="btn btn-primary w-100">🔮 Пресметај со LSTM</button>
+          </div>
+        </form>
+
+        {% if ai_prediction_result %}
+        <hr>
+        <div class="row mt-3">
+          <div class="col-md-4 text-center">
+            <h6>Предвидена цена за {{ ai_prediction_result.target_date }}:</h6>
+            <h1 class="text-primary">${{ ai_prediction_result.predicted_price|floatformat:2 }}</h1>
+
+            {% if ai_prediction_result.direction == 'UP' %}
+            <span class="badge bg-success">▲ Очекуван пораст</span>
+            {% else %}
+            <span class="badge bg-danger">▼ Очекуван пад</span>
+            {% endif %}
+
+            <div class="mt-3">
+              <small class="text-muted">
+                Тековна цена: ${{ ai_prediction_result.last_known_price|floatformat:2 }}<br>
+                Предвидување за {{ ai_prediction_result.days_ahead }} ден{% if ai_prediction_result.days_ahead != 1 %}ови{% endif %} однапред
+              </small>
+            </div>
+          </div>
+          <div class="col-md-8">
+            <canvas id="predictionChart" style="height: 250px;"></canvas>
+          </div>
+        </div>
+
+        <script>
+          document.addEventListener('DOMContentLoaded', function () {
+            const ctx = document.getElementById('predictionChart');
+            if (ctx) {
+              new Chart(ctx.getContext('2d'), {
+                type: 'line',
+                data: {
+                  labels: {{ ai_prediction_result.labels | safe }},
+            datasets: [{
+              label: 'Движење на цена',
+              data: {{ ai_prediction_result.values | safe }},
+            borderColor: '#0d6efd',
+            backgroundColor: 'rgba(13, 110, 253, 0.1)',
+            fill: true,
+            tension: 0.3,
+            pointRadius: (ctx) => ctx.dataIndex === ctx.dataset.data.length - 1 ? 7 : 3,
+            pointBackgroundColor: (ctx) => ctx.dataIndex === ctx.dataset.data.length - 1 ? 'red' : '#0d6efd'
+                                }]
+                            },
+            options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: true },
+              tooltip: { enabled: true }
+            },
+            scales: {
+              y: {
+                beginAtZero: false
+              }
+            }
+          }
+                        });
+                    }
+                });
+        </script>
+        {% endif %}
+
+        {% if ai_error %}
+        <div class="alert alert-danger mt-3">
+          <strong>Грешка при предвидување:</strong> {{ ai_error }}
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="card shadow-sm">
+      <div class="card-header bg-white">
+        <h5 class="mb-0">📜 Историски Податоци (Табеларен преглед)</h5>
+      </div>
+      <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+        <table class="table table-striped table-hover mb-0 text-center small">
+          <thead class="table-dark sticky-top">
+            <tr>
+              <th>Датум</th>
+              <th>Open</th>
+              <th>High</th>
+              <th>Low</th>
+              <th>Close</th>
+              <th>Volume</th>
+              <th>Промена</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in table_data %}
+            <tr>
+              <td>{{ row.Date }}</td>
+              <td>{{ row.Open|floatformat:2 }}</td>
+              <td>{{ row.High|floatformat:2 }}</td>
+              <td>{{ row.Low|floatformat:2 }}</td>
+              <td class="fw-bold">{{ row.Close|floatformat:2 }}</td>
+              <td>{{ row.Volume|floatformat:0 }}</td>
+              <td>
+                {% if row.change_raw >= 0 %}
+                <span class="text-green">▲ {{ row.change_str }}%</span>
+                {% else %}
+                <span class="text-red">▼ {{ row.change_str }}%</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="7">Нема податоци.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    const ctx = document.getElementById('mainChart').getContext('2d');
+
+    const labels = {{ chart_labels| safe }};
+    const closeData = {{ chart_closes| safe }};
+    const smaData = {{ chart_sma| safe }};
+    const emaData = {{ chart_ema| safe }};
+
+    const myChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [
+          {
+            label: 'Цена (Close)',
+            data: closeData,
+            borderColor: '#0d6efd',
+            backgroundColor: 'rgba(13, 110, 253, 0.1)',
+            borderWidth: 2,
+            pointRadius: 0,
+            fill: true,
+            tension: 0.1
+          },
+          {
+            label: 'SMA (7 days)',
+            data: smaData,
+            borderColor: '#ffc107',
+            borderWidth: 1.5,
+            pointRadius: 0,
+            borderDash: [5, 5],
+            fill: false
+          },
+          {
+            label: 'EMA (7 days)',
+            data: emaData,
+            borderColor: '#198754',
+            borderWidth: 1.5,
+            pointRadius: 0,
+            fill: false
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: {
+          mode: 'index',
+          intersect: false,
+        },
+        scales: {
+          x: {
+            type: 'time',
+            time: {
+              unit: 'day',
+              displayFormats: { day: 'MMM dd' }
+            },
+            grid: { display: false }
+          },
+          y: {
+            grid: { color: '#f0f0f0' }
+          }
+        },
+        plugins: {
+          tooltip: { enabled: true },
+          legend: { position: 'top' }
+        }
+      }
+    });
+  </script>
+
+</body>
+
+</html>
