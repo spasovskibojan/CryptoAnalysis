@@ -3,7 +3,7 @@ from django.contrib import messages
 import os
 import sys
 import requests
-from .facade import CryptoMarketFacade
+from .facade import CryptoMarketFacade, wake_up_services
 
 BASE_DIR_OF_DJANGO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(BASE_DIR_OF_DJANGO)
@@ -39,6 +39,10 @@ def index(request):
     })
 
 def detail(request, symbol):
+    # Wake up TA and FA services if sleeping (Render free tier)
+    print("DEBUG: Attempting to wake up services...")
+    wake_up_services()
+    
     timeframe = request.GET.get('timeframe', '1m')
     
     context, error = market_facade.get_coin_details(symbol, timeframe)

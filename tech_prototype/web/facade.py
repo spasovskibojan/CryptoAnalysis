@@ -17,6 +17,34 @@ except ImportError:
     def run_pipeline():
         print("Pipeline script not found!")
 
+def wake_up_services():
+    """
+    Wake up TA and FA services if they're sleeping (Render free tier).
+    Makes parallel health check calls with generous timeout.
+    Returns True if services respond, False otherwise.
+    """
+    def ping_service(url, name):
+        try:
+            print(f"DEBUG: Waking up {name} at {url}")
+            response = requests.get(url, timeout=45)  # 45s for cold start
+            print(f"DEBUG: {name} responded with status {response.status_code}")
+            return True
+        except Exception as e:
+            print(f"DEBUG: {name} failed to wake: {str(e)}")
+            return False
+    
+    # Ping both services in parallel
+    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+        ta_future = executor.submit(ping_service, f"{TA_SERVICE_URL}/", "TA Service")
+        fa_future = executor.submit(ping_service, f"{FA_SERVICE_URL}/sentiment/BTC-USD", "FA Service")
+        
+        # Wait for both to complete
+        ta_ready = ta_future.result()
+        fa_ready = fa_future.result()
+    
+    print(f"DEBUG: Services ready - TA: {ta_ready}, FA: {fa_ready}")
+    return ta_ready or fa_ready  # At least one should be ready
+
 class CryptoMarketFacade:
     def __init__(self, data_dir):
         self.data_dir = data_dir
@@ -115,7 +143,7 @@ class CryptoMarketFacade:
             data_payload = df_to_send.to_dict(orient='records')
 
             print(f"DEBUG: Calling TA service at {TA_SERVICE_URL}/analyze")
-            response = requests.post(f"{TA_SERVICE_URL}/analyze", json={"data": data_payload}, timeout=10)
+            response = requests.post(f"{TA_SERVICE_URL}/analyze", json={"data": data_payload}, timeout=20)
 
             if response.status_code == 200:
                 result = response.json()
@@ -143,7 +171,7 @@ class CryptoMarketFacade:
     def _get_sentiment_from_service(self, symbol):
         try:
             print(f"DEBUG: Calling FA sentiment at {FA_SERVICE_URL}/sentiment/{symbol}")
-            r = requests.get(f"{FA_SERVICE_URL}/sentiment/{symbol}", timeout=10)
+            r = requests.get(f"{FA_SERVICE_URL}/sentiment/{symbol}", timeout=20)
             if r.status_code == 200:
                 return r.json()
         except:
@@ -153,7 +181,7 @@ class CryptoMarketFacade:
     def _get_on_chain_from_service(self, symbol):
         try:
             print(f"DEBUG: Calling FA onchain at {FA_SERVICE_URL}/onchain/{symbol}")
-            r = requests.get(f"{FA_SERVICE_URL}/onchain/{symbol}", timeout=10)
+            r = requests.get(f"{FA_SERVICE_URL}/onchain/{symbol}", timeout=20)
             if r.status_code == 200:
                 return r.json()
         except Exception:
