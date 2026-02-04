@@ -20,6 +20,30 @@ except ImportError:
 # Global state to track if services have been woken this deployment
 _services_woken = False
 _services_ready = {"ta": False, "fa": False}
+_wakeup_thread = None
+
+def wake_up_services_async():
+    """
+    Wake up TA and FA services in the BACKGROUND without blocking.
+    
+    This is called on the home page to pre-warm services so they're ready
+    when the user clicks on a coin. Returns immediately.
+    """
+    global _services_woken, _wakeup_thread
+    import threading
+    
+    # Only start wake-up once
+    if _services_woken:
+        return
+    
+    # Already waking up in background
+    if _wakeup_thread and _wakeup_thread.is_alive():
+        return
+    
+    # Start wake-up in background thread
+    _wakeup_thread = threading.Thread(target=wake_up_services, daemon=True)
+    _wakeup_thread.start()
+    print("DEBUG: Started background service wake-up thread", flush=True)
 
 def wake_up_services(force=False):
     """

@@ -3,7 +3,7 @@ from django.contrib import messages
 import os
 import sys
 import requests
-from .facade import CryptoMarketFacade, wake_up_services
+from .facade import CryptoMarketFacade, wake_up_services_async
 
 BASE_DIR_OF_DJANGO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(BASE_DIR_OF_DJANGO)
@@ -23,9 +23,9 @@ def refresh_database(request):
     return redirect('index')
 
 def index(request):
-    # Wake up TA and FA services (Render free tier cold start)
-    # DISABLED: Causing worker timeouts. Services wake up automatically on first API call.
-    # wake_up_services()
+    # Wake up TA and FA services in background (non-blocking)
+    # Services will be ready by the time user clicks a coin
+    wake_up_services_async()
     
     query = request.GET.get('q')
     
