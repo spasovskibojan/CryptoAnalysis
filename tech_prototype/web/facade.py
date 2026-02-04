@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 from .ai_service import get_sentiment_analysis, get_on_chain_data
 
 # URL of the Technical Analysis Microservice
-TA_SERVICE_URL = os.getenv("TA_SERVICE_URL", "http://localhost:8001/analyze")
+TA_SERVICE_URL = os.getenv("TA_SERVICE_URL", "http://localhost:8001")
 # URL of the Fundamental Analysis Microservice
 FA_SERVICE_URL = os.getenv("FA_SERVICE_URL", "http://localhost:8002")
 
@@ -114,7 +114,7 @@ class CryptoMarketFacade:
 
             data_payload = df_to_send.to_dict(orient='records')
 
-            response = requests.post(TA_SERVICE_URL, json={"data": data_payload}, timeout=30)
+            response = requests.post(f"{TA_SERVICE_URL}/analyze", json={"data": data_payload}, timeout=30)
 
             if response.status_code == 200:
                 result = response.json()
