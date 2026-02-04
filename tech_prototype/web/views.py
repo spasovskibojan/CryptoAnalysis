@@ -23,6 +23,11 @@ def refresh_database(request):
     return redirect('index')
 
 def index(request):
+    # Wake up TA and FA services in background (Render free tier)
+    # Services will be ready by the time user clicks a coin!
+    print("DEBUG: Waking up services on homepage load...")
+    wake_up_services()
+    
     query = request.GET.get('q')
     
     if not query:
@@ -39,10 +44,6 @@ def index(request):
     })
 
 def detail(request, symbol):
-    # Wake up TA and FA services if sleeping (Render free tier)
-    print("DEBUG: Attempting to wake up services...")
-    wake_up_services()
-    
     timeframe = request.GET.get('timeframe', '1m')
     
     context, error = market_facade.get_coin_details(symbol, timeframe)
