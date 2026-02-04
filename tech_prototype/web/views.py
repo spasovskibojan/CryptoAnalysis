@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect
 from django.contrib import messages
 import os
 import sys
+import requests
 from .facade import CryptoMarketFacade
 
 BASE_DIR_OF_DJANGO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -48,7 +49,7 @@ def detail(request, symbol):
             'error': error
         })
     
-    # LSTM Предвидување
+    # LSTM Предвидување - Call external service
     ai_prediction_result = None
     ai_error = None
     
@@ -57,15 +58,28 @@ def detail(request, symbol):
     
     if predict_symbol and predict_date:
         try:
-            from .lstm_predictor import predict_crypto_price
+            # Get LSTM service URL from environment variable
+            lstm_url = os.environ.get('LSTM_SERVICE_URL', 'http://localhost:7860')
             
-            # Предвидување
-            ai_prediction_result = predict_crypto_price(
-                symbol=predict_symbol,
-                target_date=predict_date,
-                data_dir=DATA_DIR
+            # Call external LSTM service via HTTP
+            response = requests.post(
+                f"{lstm_url}/predict",
+                json={
+                    "symbol": predict_symbol,
+                    "target_date": predict_date
+                },
+                timeout=30
             )
             
+            if response.status_code == 200:
+                ai_prediction_result = response.json()
+            else:
+                ai_error = f"LSTM Service Error: {response.status_code} - {response.text}"
+            
+        except requests.exceptions.Timeout:
+            ai_error = "LSTM service timeout. Please try again."
+        except requests.exceptions.ConnectionError:
+            ai_error = "Cannot connect to LSTM service. Please try again later."
         except Exception as e:
             ai_error = str(e)
     
