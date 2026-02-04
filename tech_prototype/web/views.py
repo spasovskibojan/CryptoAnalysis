@@ -8,7 +8,7 @@ from .facade import CryptoMarketFacade
 BASE_DIR_OF_DJANGO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(BASE_DIR_OF_DJANGO)
 
-DATA_DIR = os.path.join(BASE_DIR_OF_DJANGO, '..', '..', 'data')
+DATA_DIR = os.path.join(BASE_DIR_OF_DJANGO, '..', 'data')
 DATA_DIR = os.path.abspath(DATA_DIR)
 
 # Instantiate Facade
