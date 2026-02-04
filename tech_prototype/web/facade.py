@@ -17,51 +17,110 @@ except ImportError:
     def run_pipeline():
         print("Pipeline script not found!")
 
-def wake_up_services():
+# Global state to track if services have been woken this deployment
+_services_woken = False
+_services_ready = {"ta": False, "fa": False}
+
+def wake_up_services(force=False):
     """
     Wake up TA and FA services if they're sleeping (Render free tier).
-    Retries until services respond with 200 OK or max attempts reached.
-    """
-    import time
     
-    def ping_until_ready(url, name, max_attempts=3, delay=5):
-        """Ping service until it responds with 200 or max attempts reached."""
+    This function will:
+    1. Only run ONCE per deployment (unless force=True)
+    2. Block until BOTH services respond with 200 OK
+    3. Use aggressive retry logic suitable for Render cold starts (~50-90 seconds)
+    
+    Returns True if at least one service is ready.
+    """
+    global _services_woken, _services_ready
+    import time
+    import sys
+    
+    # Skip if already woken (unless forced)
+    if _services_woken and not force:
+        print(f"DEBUG: Services already woken - TA: {_services_ready['ta']}, FA: {_services_ready['fa']}", flush=True)
+        return _services_ready['ta'] or _services_ready['fa']
+    
+    def ping_until_ready(url, name, max_attempts=8):
+        """
+        Ping service until it responds with 200 or max attempts reached.
+        Uses adaptive delays based on response type.
+        
+        Total max wait time: ~3-4 minutes (enough for Render cold start)
+        """
         for attempt in range(max_attempts):
             try:
-                print(f"DEBUG: Waking {name} (attempt {attempt+1}/{max_attempts}) at {url}")
-                response = requests.get(url, timeout=30)
+                # Longer timeout on early attempts (cold start takes 50-90s)
+                if attempt == 0:
+                    timeout = 90  # First attempt: wait up to 90s for cold start
+                elif attempt <= 2:
+                    timeout = 45  # Early retries: 45s
+                else:
+                    timeout = 30  # Later retries: 30s
+                
+                print(f"DEBUG: Waking {name} (attempt {attempt+1}/{max_attempts}) at {url} [timeout={timeout}s]", flush=True)
+                sys.stdout.flush()
+                
+                response = requests.get(url, timeout=timeout)
                 
                 if response.status_code == 200:
-                    print(f"DEBUG: {name} is READY (200 OK)")
+                    print(f"DEBUG: {name} is READY! ✓ (200 OK)", flush=True)
                     return True
+                    
+                elif response.status_code == 429:
+                    # Rate limited - back off aggressively
+                    delay = min(15 * (attempt + 1), 60)  # 15, 30, 45, 60, 60...
+                    print(f"DEBUG: {name} rate limited (429), waiting {delay}s...", flush=True)
+                    if attempt < max_attempts - 1:
+                        time.sleep(delay)
+                        
+                elif response.status_code in [502, 503, 504]:
+                    # Service starting - these are expected during cold start
+                    delay = 10 + (attempt * 5)  # 10, 15, 20, 25, 30...
+                    print(f"DEBUG: {name} cold starting ({response.status_code}), waiting {delay}s...", flush=True)
+                    if attempt < max_attempts - 1:
+                        time.sleep(delay)
                 else:
-                    print(f"DEBUG: {name} returned {response.status_code}, retrying in {delay}s...")
+                    delay = 10
+                    print(f"DEBUG: {name} returned {response.status_code}, waiting {delay}s...", flush=True)
                     if attempt < max_attempts - 1:
                         time.sleep(delay)
                         
             except requests.exceptions.Timeout:
-                print(f"DEBUG: {name} timeout (still starting up), retrying in {delay}s...")
+                # Timeout during cold start is NORMAL - service is booting
+                print(f"DEBUG: {name} timeout (booting up, this is normal)...", flush=True)
+                # Don't sleep after timeout - the timeout itself was the wait
+                
+            except requests.exceptions.ConnectionError:
+                # Connection refused - service container not ready yet
+                delay = 15
+                print(f"DEBUG: {name} connection refused (container starting), waiting {delay}s...", flush=True)
                 if attempt < max_attempts - 1:
                     time.sleep(delay)
+                    
             except Exception as e:
-                print(f"DEBUG: {name} error: {str(e)}, retrying in {delay}s...")
+                delay = 10
+                print(f"DEBUG: {name} error: {type(e).__name__}: {str(e)[:50]}, waiting {delay}s...", flush=True)
                 if attempt < max_attempts - 1:
                     time.sleep(delay)
         
-        print(f"DEBUG: {name} NOT ready after {max_attempts} attempts")
+        print(f"DEBUG: {name} NOT ready after {max_attempts} attempts ✗", flush=True)
         return False
+    
+    print("DEBUG: === Starting service wake-up (this may take 1-2 minutes on first load) ===", flush=True)
     
     # Ping both services in parallel
     with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
-        ta_future = executor.submit(ping_until_ready, f"{TA_SERVICE_URL}/", "TA Service")
-        fa_future = executor.submit(ping_until_ready, f"{FA_SERVICE_URL}/sentiment/BTC-USD", "FA Service")
+        ta_future = executor.submit(ping_until_ready, f"{TA_SERVICE_URL}/health", "TA Service")
+        fa_future = executor.submit(ping_until_ready, f"{FA_SERVICE_URL}/health", "FA Service")
         
-        # Wait for both to complete
-        ta_ready = ta_future.result()
-        fa_ready = fa_future.result()
+        # Wait for BOTH to complete (blocking)
+        _services_ready['ta'] = ta_future.result()
+        _services_ready['fa'] = fa_future.result()
     
-    print(f"DEBUG: Services ready - TA: {ta_ready}, FA: {fa_ready}")
-    return ta_ready or fa_ready
+    _services_woken = True
+    print(f"DEBUG: === Wake-up complete - TA: {_services_ready['ta']}, FA: {_services_ready['fa']} ===", flush=True)
+    return _services_ready['ta'] or _services_ready['fa']
 
 class CryptoMarketFacade:
     def __init__(self, data_dir):

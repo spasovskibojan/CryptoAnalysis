@@ -206,3 +206,13 @@ def get_on_chain(symbol: str):
         data['dominance'] = "N/A"
 
     return data
+
+@app.get("/")
+def read_root():
+    """Root endpoint."""
+    return {"status": "Fundamental Analysis Service is Running"}
+
+@app.get("/health")
+def health_check():
+    """Lightweight health check endpoint for Render wake-up pings."""
+    return {"status": "ok"}

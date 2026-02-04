@@ -23,9 +23,8 @@ def refresh_database(request):
     return redirect('index')
 
 def index(request):
-    # Wake up TA and FA services in background (Render free tier)
-    # Services will be ready by the time user clicks a coin!
-    print("DEBUG: Waking up services on homepage load...")
+    # Wake up TA and FA services (Render free tier cold start)
+    # This blocks on FIRST load until services are ready, then instant on subsequent loads
     wake_up_services()
     
     query = request.GET.get('q')

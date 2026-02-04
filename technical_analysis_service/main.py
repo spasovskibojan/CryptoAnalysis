@@ -102,3 +102,8 @@ async def analyze_data(request: AnalysisRequest):
 @app.get("/")
 def read_root():
     return {"status": "Technical Analysis Service is Running"}
+
+@app.get("/health")
+def health_check():
+    """Lightweight health check endpoint for Render wake-up pings."""
+    return {"status": "ok"}

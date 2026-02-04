@@ -1,5 +1,4 @@
 from django.apps import AppConfig
-import threading
 
 
 class WebConfig(AppConfig):
@@ -9,23 +8,8 @@ class WebConfig(AppConfig):
     def ready(self):
         """
         Called when Django starts up.
-        Wake TA/FA services in background thread so all services are ready together.
+        Note: Service wake-up is now handled on first request via wake_up_services()
+        in facade.py with global state tracking. This ensures services are ready
+        when the user first loads the homepage.
         """
-        # Only run in main process, not in reloader process
-        import os
-        if os.environ.get('RUN_MAIN') != 'true':
-            # This is the reloader process, skip
-            return
-            
-        # Import here to avoid circular imports
-        from .facade import wake_up_services
-        
-        def wake_services_async():
-            print("DEBUG: Django startup - waking TA/FA services in background...")
-            wake_up_services()
-            print("DEBUG: Background service wake-up complete!")
-        
-        # Start wake-up in background thread (non-blocking)
-        thread = threading.Thread(target=wake_services_async, daemon=True)
-        thread.start()
-        print("DEBUG: Django ready - service wake-up started in background")
+        pass  # Wake-up handled in views.py on first request
