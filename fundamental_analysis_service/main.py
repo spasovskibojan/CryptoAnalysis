@@ -66,11 +66,11 @@ def get_sentiment(symbol: str):
 
                 avg_score = sentiment_score / len(articles)
                 if avg_score >= 0.05:
-                    prediction, p_color = "Bullish (Раст) 🚀", "success"
+                    prediction, p_color = "Bullish (Growth) 🚀", "success"
                 elif avg_score <= -0.05:
-                    prediction, p_color = "Bearish (Пад) 📉", "danger"
+                    prediction, p_color = "Bearish (Drop) 📉", "danger"
                 else:
-                    prediction, p_color = "Neutral (Стабилно) ⚖️", "secondary"
+                    prediction, p_color = "Neutral (Stable) ⚖️", "secondary"
 
                 return {'news': analyzed_news, 'score': round(avg_score, 4), 'prediction': prediction,
                         'prediction_color': p_color}

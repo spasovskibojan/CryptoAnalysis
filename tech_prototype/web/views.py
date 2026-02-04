@@ -17,9 +17,9 @@ market_facade = CryptoMarketFacade(DATA_DIR)
 def refresh_database(request):
     try:
         market_facade.refresh_database()
-        messages.success(request, "Базата е успешно ажурирана! 🚀")
+        messages.success(request, "Database successfully updated! 🚀")
     except Exception as e:
-        messages.error(request, f"Грешка: {e}")
+        messages.error(request, f"Error: {e}")
     return redirect('index')
 
 def index(request):
@@ -30,10 +30,10 @@ def index(request):
     query = request.GET.get('q')
     
     if not query:
-        title_text = "⭐ Лидери (Market Leaders)"
+        title_text = "⭐ Market Leaders"
         display_coins = market_facade.get_market_leaders()
     else:
-        title_text = f"Резултати за: {query}"
+        title_text = f"Results for: {query}"
         display_coins = market_facade.search_coins(query)
 
     return render(request, 'index.html', {
