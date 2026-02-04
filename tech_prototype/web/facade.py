@@ -114,7 +114,8 @@ class CryptoMarketFacade:
 
             data_payload = df_to_send.to_dict(orient='records')
 
-            response = requests.post(f"{TA_SERVICE_URL}/analyze", json={"data": data_payload}, timeout=90)
+            print(f"DEBUG: Calling TA service at {TA_SERVICE_URL}/analyze")
+            response = requests.post(f"{TA_SERVICE_URL}/analyze", json={"data": data_payload}, timeout=10)
 
             if response.status_code == 200:
                 result = response.json()
@@ -141,7 +142,8 @@ class CryptoMarketFacade:
 
     def _get_sentiment_from_service(self, symbol):
         try:
-            r = requests.get(f"{FA_SERVICE_URL}/sentiment/{symbol}", timeout=90)
+            print(f"DEBUG: Calling FA sentiment at {FA_SERVICE_URL}/sentiment/{symbol}")
+            r = requests.get(f"{FA_SERVICE_URL}/sentiment/{symbol}", timeout=10)
             if r.status_code == 200:
                 return r.json()
         except:
@@ -150,7 +152,8 @@ class CryptoMarketFacade:
 
     def _get_on_chain_from_service(self, symbol):
         try:
-            r = requests.get(f"{FA_SERVICE_URL}/onchain/{symbol}", timeout=90)
+            print(f"DEBUG: Calling FA onchain at {FA_SERVICE_URL}/onchain/{symbol}")
+            r = requests.get(f"{FA_SERVICE_URL}/onchain/{symbol}", timeout=10)
             if r.status_code == 200:
                 return r.json()
         except Exception:
