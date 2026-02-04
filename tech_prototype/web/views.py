@@ -68,7 +68,7 @@ def detail(request, symbol):
                     "symbol": predict_symbol,
                     "target_date": predict_date
                 },
-                timeout=30
+                timeout=120
             )
             
             if response.status_code == 200:
