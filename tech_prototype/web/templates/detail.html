@@ -454,37 +454,43 @@
           document.addEventListener('DOMContentLoaded', function () {
             const ctx = document.getElementById('predictionChart');
             if (ctx) {
-              new Chart(ctx.getContext('2d'), {
-                type: 'line',
-                data: {
-                  labels: {{ ai_prediction_result.labels | safe }},
-            datasets: [{
-              label: 'Движење на цена',
-              data: {{ ai_prediction_result.values | safe }},
-            borderColor: '#0d6efd',
-            backgroundColor: 'rgba(13, 110, 253, 0.1)',
-            fill: true,
-            tension: 0.3,
-            pointRadius: (ctx) => ctx.dataIndex === ctx.dataset.data.length - 1 ? 7 : 3,
-            pointBackgroundColor: (ctx) => ctx.dataIndex === ctx.dataset.data.length - 1 ? 'red' : '#0d6efd'
-                                }]
-                            },
-            options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-              legend: { display: true },
-              tooltip: { enabled: true }
+              // Extract data from Django template to JS variables for cleaner syntax
+              const chartLabels = {{ ai_prediction_result.labels | safe
+            }
+          };
+          const chartData = {{ ai_prediction_result.values | safe }};
+
+          new Chart(ctx.getContext('2d'), {
+            type: 'line',
+            data: {
+              labels: chartLabels,
+              datasets: [{
+                label: 'Движење на цена',
+                data: chartData,
+                borderColor: '#0d6efd',
+                backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                fill: true,
+                tension: 0.3,
+                pointRadius: (ctx) => ctx.dataIndex === ctx.dataset.data.length - 1 ? 7 : 3,
+                pointBackgroundColor: (ctx) => ctx.dataIndex === ctx.dataset.data.length - 1 ? 'red' : '#0d6efd'
+              }]
             },
-            scales: {
-              y: {
-                beginAtZero: false
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: { display: true },
+                tooltip: { enabled: true }
+              },
+              scales: {
+                y: {
+                  beginAtZero: false
+                }
               }
             }
-          }
-                        });
-                    }
-                });
+          });
+            }
+          });
         </script>
         {% endif %}
 
