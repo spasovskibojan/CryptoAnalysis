@@ -24,8 +24,8 @@ def refresh_database(request):
 
 def index(request):
     # Wake up TA and FA services (Render free tier cold start)
-    # This blocks on FIRST load until services are ready, then instant on subsequent loads
-    wake_up_services()
+    # DISABLED: Causing worker timeouts. Services wake up automatically on first API call.
+    # wake_up_services()
     
     query = request.GET.get('q')
     
