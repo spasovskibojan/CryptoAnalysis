@@ -19,8 +19,8 @@ db.sqlite3-journal
 /static/
 /media/
 
-# LSTM Models Cache
-models/
+# LSTM Models Cache (Keep local for faster predictions)
+# Don't commit large model files to git
 *.keras
 *.h5
 *.pkl
