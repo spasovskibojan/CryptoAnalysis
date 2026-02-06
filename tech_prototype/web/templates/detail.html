@@ -352,6 +352,7 @@
             <h5 class="mb-0">⛓️ On-Chain Metrics</h5>
           </div>
           <div class="card-body p-0">
+            {% if on_chain %}
             <ul class="list-group list-group-flush">
 
               <li class="list-group-item d-flex justify-content-between align-items-center">
@@ -394,6 +395,12 @@
                 <span class="fw-bold">{{ on_chain.dominance }}</span>
               </li>
             </ul>
+            {% else %}
+            <div class="p-3 text-center text-muted">
+              <p class="mb-0">On-chain data temporarily unavailable.</p>
+              <small>Service is waking up, please refresh in a moment.</small>
+            </div>
+            {% endif %}
           </div>
           <div class="card-footer bg-light py-2">
             <small class="text-muted" style="font-size: 0.75rem;">
