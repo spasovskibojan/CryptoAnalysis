@@ -103,4 +103,14 @@ def detail(request, symbol):
     context['ai_prediction_result'] = ai_prediction_result
     context['ai_error'] = ai_error
         
-    return render(request, 'detail.html', context)
+    try:
+        print(f"DEBUG: Rendering detail.html for {symbol}...", flush=True)
+        return render(request, 'detail.html', context)
+    except Exception as e:
+        import traceback
+        print(f"DEBUG: EXCEPTION in render: {e}", flush=True)
+        print(f"DEBUG: Traceback: {traceback.format_exc()}", flush=True)
+        return render(request, 'detail.html', {
+            'symbol': symbol,
+            'error': f"Template Error: {str(e)}"
+        })
