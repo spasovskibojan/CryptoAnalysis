@@ -462,7 +462,7 @@
             const ctx = document.getElementById('predictionChart');
             if (ctx) {
               // Extract data from Django template to JS variables for cleaner syntax
-              const chartLabels = {{ ai_prediction_result.labels | safe
+              const chartLabels = {{ ai_prediction_result.labels | safe }}
             }
           };
           const chartData = {{ ai_prediction_result.values | safe }};
