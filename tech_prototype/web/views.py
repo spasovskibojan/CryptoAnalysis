@@ -45,7 +45,19 @@ def index(request):
 def detail(request, symbol):
     timeframe = request.GET.get('timeframe', '1m')
     
-    context, error = market_facade.get_coin_details(symbol, timeframe)
+    print(f"DEBUG: detail() called for {symbol}, timeframe={timeframe}", flush=True)
+    
+    try:
+        context, error = market_facade.get_coin_details(symbol, timeframe)
+        print(f"DEBUG: get_coin_details returned, error={error}", flush=True)
+    except Exception as e:
+        import traceback
+        print(f"DEBUG: EXCEPTION in get_coin_details: {e}", flush=True)
+        print(f"DEBUG: Traceback: {traceback.format_exc()}", flush=True)
+        return render(request, 'detail.html', {
+            'symbol': symbol,
+            'error': f"Internal error: {str(e)}"
+        })
     
     if error:
         return render(request, 'detail.html', {

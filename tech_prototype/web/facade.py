@@ -197,15 +197,19 @@ class CryptoMarketFacade:
         return None
 
     def get_coin_details(self, symbol, timeframe='1m'):
+        print(f"DEBUG: get_coin_details START for {symbol}", flush=True)
         file_path = os.path.join(self.data_dir, f"{symbol}.json")
 
         if not os.path.exists(file_path):
+            print(f"DEBUG: File not found: {file_path}", flush=True)
             return None, "File not found"
 
         try:
             with open(file_path, 'r') as f:
                 raw_data = json.load(f)
-        except:
+            print(f"DEBUG: JSON loaded, {len(raw_data)} records", flush=True)
+        except Exception as e:
+            print(f"DEBUG: JSON load error: {e}", flush=True)
             return None, "Invalid JSON"
 
         df = pd.DataFrame(raw_data)
