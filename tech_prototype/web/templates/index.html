@@ -84,8 +84,7 @@
                         <h2 class="display-6 mb-0">${{ coin.price }}</h2>
                         <div class="mb-3">
                             {% if coin.change_raw >= 0 %}
-                            <span class="text-green bg-success-subtle px-2 py-1 rounded">▲ + {{ coin.change_str
-                                }}%</span>
+                            <span class="text-green bg-success-subtle px-2 py-1 rounded">▲ + {{ coin.change_str }}%</span>
                             {% else %}
                             <span class="text-red bg-danger-subtle px-2 py-1 rounded">▼ {{ coin.change_str }}%</span>
                             {% endif %}
