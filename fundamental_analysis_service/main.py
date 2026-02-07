@@ -1,15 +1,23 @@
 from fastapi import FastAPI, HTTPException
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 import requests
+import os
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
 app = FastAPI()
 analyzer = SentimentIntensityAnalyzer()
 
+# Get CoinGecko API key from environment variable
+COINGECKO_API_KEY = os.environ.get('COINGECKO_API_KEY', '')
+
 HEADERS = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
 }
+
+# Add API key to headers if available
+if COINGECKO_API_KEY:
+    HEADERS['x-cg-demo-api-key'] = COINGECKO_API_KEY
 
 COIN_MAPPING = {
     'BTC': 'bitcoin', 'ETH': 'ethereum', 'XRP': 'ripple', 'SOL': 'solana',
