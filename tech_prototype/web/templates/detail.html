@@ -2,7 +2,7 @@
 <html>
 
 <head>
-  <title>{{ symbol }} Анализа</title>
+  <title>{{ symbol }} Analysis</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js/dist/chart.umd.js"></script>
@@ -50,20 +50,20 @@
   <div class="container mt-4 mb-5">
     <div class="d-flex justify-content-between align-items-center mb-4">
       <div>
-        <h2 class="fw-bold">{{ symbol }} <span class="text-muted fs-5">Анализа</span></h2>
+        <h2 class="fw-bold">{{ symbol }} <span class="text-muted fs-5">Analysis</span></h2>
       </div>
-      <a href="/" class="btn btn-outline-secondary">← Назад</a>
+      <a href="/" class="btn btn-outline-secondary">← Back</a>
     </div>
     <!-- TECHNICAL BUY / SELL / HOLD SIGNALS -->
     <div class="card shadow-sm mb-4">
       <div class="card-header bg-white">
-        <h5 class="mb-0">📈 Технички сигнали (преглед)</h5>
+        <h5 class="mb-0">📈 Technical Signals (Overview)</h5>
       </div>
       <div class="card-body text-center">
         <div class="row">
 
           <div class="col-md-4">
-            <h6>1 Ден</h6>
+            <h6>1 Day</h6>
             <span class="badge fs-6
                     {% if ta_signals.1d == 'BUY' %}bg-success
                     {% elif ta_signals.1d == 'SELL' %}bg-danger
@@ -73,7 +73,7 @@
           </div>
 
           <div class="col-md-4">
-            <h6>1 Недела</h6>
+            <h6>1 Week</h6>
             <span class="badge fs-6
                     {% if ta_signals.1w == 'BUY' %}bg-success
                     {% elif ta_signals.1w == 'SELL' %}bg-danger
@@ -83,7 +83,7 @@
           </div>
 
           <div class="col-md-4">
-            <h6>1 Месец</h6>
+            <h6>1 Month</h6>
             <span class="badge fs-6
                     {% if ta_signals.1m == 'BUY' %}bg-success
                     {% elif ta_signals.1m == 'SELL' %}bg-danger
@@ -99,12 +99,12 @@
 
     <div class="card shadow-sm mb-4">
       <div class="card-header bg-white d-flex justify-content-between align-items-center">
-        <h5 class="mb-0">📊 Техничка Анализа (Цена & Индикатори)</h5>
+        <h5 class="mb-0">📊 Technical Analysis (Price & Indicators)</h5>
         <div class="btn-group btn-group-sm">
           <a href="?timeframe=1m" class="btn btn-outline-primary {% if timeframe == '1m' %}active{% endif %}">1
-            Месец</a>
+            Month</a>
           <a href="?timeframe=1y" class="btn btn-outline-primary {% if timeframe == '1y' %}active{% endif %}">1
-            Година</a>
+            Year</a>
           <a href="?timeframe=10y" class="btn btn-outline-primary {% if timeframe == '10y' %}active{% endif %}">Max</a>
         </div>
       </div>
@@ -118,7 +118,7 @@
     <!-- TECHNICAL SIGNAL BREAKDOWN -->
     <div class="card shadow-sm mb-4">
       <div class="card-header bg-white">
-        <h5 class="mb-0">🧾 Детален преглед на индикатори</h5>
+        <h5 class="mb-0">🧾 Detailed Indicator Breakdown</h5>
       </div>
 
       <div class="card-body">
@@ -126,19 +126,19 @@
           <li class="nav-item" role="presentation">
             <button class="nav-link active" id="tab-1d" data-bs-toggle="tab" data-bs-target="#pane-1d" type="button"
               role="tab">
-              1 Ден
+              1 Day
             </button>
           </li>
           <li class="nav-item" role="presentation">
             <button class="nav-link" id="tab-1w" data-bs-toggle="tab" data-bs-target="#pane-1w" type="button"
               role="tab">
-              1 Недела
+              1 Week
             </button>
           </li>
           <li class="nav-item" role="presentation">
             <button class="nav-link" id="tab-1m" data-bs-toggle="tab" data-bs-target="#pane-1m" type="button"
               role="tab">
-              1 Месец
+              1 Month
             </button>
           </li>
         </ul>
@@ -164,10 +164,10 @@
               <table class="table table-sm table-striped align-middle">
                 <thead class="table-dark">
                   <tr>
-                    <th>Индикатор</th>
-                    <th>Сигнал</th>
+                    <th>Indicator</th>
+                    <th>Signal</th>
                     <th>Score</th>
-                    <th>Вредности</th>
+                    <th>Values</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -191,7 +191,7 @@
                   </tr>
                   {% empty %}
                   <tr>
-                    <td colspan="4" class="text-muted">Нема податоци.</td>
+                    <td colspan="4" class="text-muted">No data available.</td>
                   </tr>
                   {% endfor %}
                 </tbody>
@@ -317,7 +317,7 @@
       <div class="col-md-8">
         <div class="card shadow-sm h-100 ai-card {{ sentiment.prediction_color|default:'secondary' }}">
           <div class="card-header bg-white">
-            <h5 class="mb-0">🤖 AI Sentiment (NLP Анализа на Вести)</h5>
+            <h5 class="mb-0">🤖 AI Sentiment (NLP News Analysis)</h5>
           </div>
           <div class="card-body">
             {% if sentiment %}
@@ -328,7 +328,7 @@
               <span class="badge bg-dark">Score: {{ sentiment.score }}</span>
             </div>
 
-            <h6>Последни вести (CryptoCompare):</h6>
+            <h6>Recent News (CryptoCompare):</h6>
             <ul class="list-group list-group-flush small">
               {% for news in sentiment.news %}
               <li class="list-group-item d-flex justify-content-between align-items-center">
@@ -338,7 +338,7 @@
               {% endfor %}
             </ul>
             {% else %}
-            <p class="text-muted">Нема доволно податоци за сентимент анализа во моментов.</p>
+            <p class="text-muted">Not enough data for sentiment analysis at this time.</p>
             {% endif %}
           </div>
         </div>
@@ -347,7 +347,7 @@
       <div class="col-md-4">
         <div class="card shadow-sm h-100">
           <div class="card-header bg-white">
-            <h5 class="mb-0">⛓️ On-Chain Метрики</h5>
+            <h5 class="mb-0">⛓️ On-Chain Metrics</h5>
           </div>
           <div class="card-body p-0">
             <ul class="list-group list-group-flush">
@@ -406,7 +406,7 @@
     <!-- LSTM AI PREDICTION -->
     <div class="card shadow-sm mb-4 border-primary">
       <div class="card-header bg-primary text-white">
-        <h5 class="mb-0">🔮 Интерактивно AI Предвидување</h5>
+        <h5 class="mb-0">🔮 Interactive AI Prediction</h5>
       </div>
       <div class="card-body">
         <form method="GET" action="" class="row g-3 align-items-end">
@@ -414,11 +414,11 @@
           <input type="hidden" name="predict_symbol" value="{{ symbol }}">
 
           <div class="col-md-8">
-            <label class="form-label">Датум за предвидување за {{ symbol }}</label>
+            <label class="form-label">Prediction Date for {{ symbol }}</label>
             <input type="date" name="predict_date" class="form-control" value="{{ request.GET.predict_date }}" required>
           </div>
           <div class="col-md-4">
-            <button type="submit" class="btn btn-primary w-100">🔮 Пресметај со LSTM</button>
+            <button type="submit" class="btn btn-primary w-100">🔮 Calculate with LSTM</button>
           </div>
         </form>
 
@@ -426,19 +426,19 @@
         <hr>
         <div class="row mt-3">
           <div class="col-md-4 text-center">
-            <h6>Предвидена цена за {{ ai_prediction_result.target_date }}:</h6>
+            <h6>Predicted Price for {{ ai_prediction_result.target_date }}:</h6>
             <h1 class="text-primary">${{ ai_prediction_result.predicted_price|floatformat:2 }}</h1>
 
             {% if ai_prediction_result.direction == 'UP' %}
-            <span class="badge bg-success">▲ Очекуван пораст</span>
+            <span class="badge bg-success">▲ Expected Rise</span>
             {% else %}
-            <span class="badge bg-danger">▼ Очекуван пад</span>
+            <span class="badge bg-danger">▼ Expected Drop</span>
             {% endif %}
 
             <div class="mt-3">
               <small class="text-muted">
-                Тековна цена: ${{ ai_prediction_result.last_known_price|floatformat:2 }}<br>
-                Предвидување за {{ ai_prediction_result.days_ahead }} ден{% if ai_prediction_result.days_ahead != 1 %}ови{% endif %} однапред
+                Current Price: ${{ ai_prediction_result.last_known_price|floatformat:2 }}<br>
+                Prediction for {{ ai_prediction_result.days_ahead }} day{% if ai_prediction_result.days_ahead != 1 %}s{% endif %} ahead
               </small>
             </div>
           </div>
@@ -456,7 +456,7 @@
                 data: {
                   labels: {{ ai_prediction_result.labels | safe }},
             datasets: [{
-              label: 'Движење на цена',
+              label: 'Price Movement',
               data: {{ ai_prediction_result.values | safe }},
             borderColor: '#0d6efd',
             backgroundColor: 'rgba(13, 110, 253, 0.1)',
@@ -487,7 +487,7 @@
 
         {% if ai_error %}
         <div class="alert alert-danger mt-3">
-          <strong>Грешка при предвидување:</strong> {{ ai_error }}
+          <strong>Prediction Error:</strong> {{ ai_error }}
         </div>
         {% endif %}
       </div>
@@ -495,19 +495,19 @@
 
     <div class="card shadow-sm">
       <div class="card-header bg-white">
-        <h5 class="mb-0">📜 Историски Податоци (Табеларен преглед)</h5>
+        <h5 class="mb-0">📜 Historical Data (Table View)</h5>
       </div>
       <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
         <table class="table table-striped table-hover mb-0 text-center small">
           <thead class="table-dark sticky-top">
             <tr>
-              <th>Датум</th>
+              <th>Date</th>
               <th>Open</th>
               <th>High</th>
               <th>Low</th>
               <th>Close</th>
               <th>Volume</th>
-              <th>Промена</th>
+              <th>Change</th>
             </tr>
           </thead>
           <tbody>
@@ -529,7 +529,7 @@
             </tr>
             {% empty %}
             <tr>
-              <td colspan="7">Нема податоци.</td>
+              <td colspan="7">No data available.</td>
             </tr>
             {% endfor %}
           </tbody>
@@ -553,7 +553,7 @@
         labels: labels,
         datasets: [
           {
-            label: 'Цена (Close)',
+            label: 'Price (Close)',
             data: closeData,
             borderColor: '#0d6efd',
             backgroundColor: 'rgba(13, 110, 253, 0.1)',
