@@ -77,14 +77,14 @@ def detail(request, symbol):
             # Get LSTM service URL from environment variable
             lstm_url = os.environ.get('LSTM_SERVICE_URL', 'http://localhost:7860')
             
-            # Call external LSTM service via HTTP
+            # Call external LSTM service via HTTP (HuggingFace can be slow)
             response = requests.post(
                 f"{lstm_url}/predict",
                 json={
                     "symbol": predict_symbol,
                     "target_date": predict_date
                 },
-                timeout=120
+                timeout=300  # 5 minutes for HuggingFace Space cold start + model loading
             )
             
             if response.status_code == 200:
@@ -93,7 +93,7 @@ def detail(request, symbol):
                 ai_error = f"LSTM Service Error: {response.status_code} - {response.text}"
             
         except requests.exceptions.Timeout:
-            ai_error = "LSTM service timeout. Please try again."
+            ai_error = "LSTM prediction took too long (HuggingFace Space may be sleeping). Please try again in a moment."
         except requests.exceptions.ConnectionError:
             ai_error = "Cannot connect to LSTM service. Please try again later."
         except Exception as e:
