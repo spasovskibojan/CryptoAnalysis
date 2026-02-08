@@ -17,41 +17,114 @@ except ImportError:
     def run_pipeline():
         print("Pipeline script not found!")
 
-# Global state to track if services have been woken this deployment
-_services_woken = False
+# Global state to track service readiness
+_service_status = {
+    'ta_ready': False,
+    'fa_ready': False,
+    'wakeup_in_progress': False,
+    'last_wakeup_attempt': None
+}
+
+def get_service_status():
+    """Get current status of microservices."""
+    return _service_status.copy()
 
 def wake_up_services_async():
     """
-    Send a quick ping to TA and FA services to start their cold boot.
-    Non-blocking - fires requests in background and returns immediately.
+    Persistently wake up TA and FA services with retry logic.
+    Non-blocking - runs in background and updates service status.
+    Retries for up to 60 seconds until services respond with 200 OK.
     """
-    global _services_woken
+    global _service_status
     import threading
+    import time
     
-    if _services_woken:
+    # Prevent multiple simultaneous wake-up attempts
+    if _service_status['wakeup_in_progress']:
+        print("DEBUG: Wake-up already in progress, skipping...", flush=True)
         return
     
-    def ping_service(url, name):
-        """Single quick ping - just trigger the cold start, don't wait"""
-        try:
-            # Short timeout - we don't care about the response, just trigger startup
-            requests.get(url, timeout=5)
-            print(f"DEBUG: Pinged {name} ✓", flush=True)
-        except:
-            print(f"DEBUG: Pinged {name} (starting up...)", flush=True)
+    # If services were woken recently (within 5 minutes), skip
+    if _service_status['last_wakeup_attempt']:
+        from datetime import datetime, timedelta
+        time_since_last = datetime.now() - _service_status['last_wakeup_attempt']
+        if time_since_last < timedelta(minutes=5):
+            print(f"DEBUG: Services were woken {time_since_last.seconds}s ago, skipping...", flush=True)
+            return
     
-    def ping_all():
-        global _services_woken
-        _services_woken = True
-        print("DEBUG: Pinging services to wake them up...", flush=True)
+    def ping_service_with_retry(url, name, status_key, max_attempts=12, retry_delay=5):
+        """
+        Persistently ping service until it responds successfully.
+        max_attempts * retry_delay = total wait time (12 * 5 = 60 seconds)
+        """
+        print(f"DEBUG: Starting wake-up sequence for {name}...", flush=True)
         
-        # Ping both services (non-blocking, short timeout)
+        for attempt in range(1, max_attempts + 1):
+            try:
+                response = requests.get(url, timeout=10)
+                if response.status_code == 200:
+                    print(f"DEBUG: ✓ {name} is READY (attempt {attempt})", flush=True)
+                    _service_status[status_key] = True
+                    return True
+                else:
+                    print(f"DEBUG: {name} responded with {response.status_code} (attempt {attempt}/{max_attempts})", flush=True)
+            except requests.exceptions.Timeout:
+                print(f"DEBUG: {name} timeout (attempt {attempt}/{max_attempts})", flush=True)
+            except requests.exceptions.ConnectionError:
+                print(f"DEBUG: {name} connection refused - still booting (attempt {attempt}/{max_attempts})", flush=True)
+            except Exception as e:
+                print(f"DEBUG: {name} error: {e} (attempt {attempt}/{max_attempts})", flush=True)
+            
+            if attempt < max_attempts:
+                time.sleep(retry_delay)
+        
+        print(f"DEBUG: ✗ {name} did not respond after {max_attempts} attempts", flush=True)
+        return False
+    
+    def wake_all_services():
+        global _service_status
+        from datetime import datetime
+        
+        _service_status['wakeup_in_progress'] = True
+        _service_status['last_wakeup_attempt'] = datetime.now()
+        
+        print("DEBUG: ========================================", flush=True)
+        print("DEBUG: Starting service wake-up sequence...", flush=True)
+        print("DEBUG: ========================================", flush=True)
+        
+        # Wake both services in parallel
         with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
-            executor.submit(ping_service, f"{TA_SERVICE_URL}/health", "TA Service")
-            executor.submit(ping_service, f"{FA_SERVICE_URL}/health", "FA Service")
+            ta_future = executor.submit(
+                ping_service_with_retry, 
+                f"{TA_SERVICE_URL}/health", 
+                "TA Service",
+                "ta_ready"
+            )
+            fa_future = executor.submit(
+                ping_service_with_retry, 
+                f"{FA_SERVICE_URL}/health", 
+                "FA Service",
+                "fa_ready"
+            )
+            
+            # Wait for both to complete
+            ta_success = ta_future.result()
+            fa_success = fa_future.result()
+        
+        _service_status['wakeup_in_progress'] = False
+        
+        if ta_success and fa_success:
+            print("DEBUG: ✓ All services are READY!", flush=True)
+        else:
+            print("DEBUG: ⚠ Some services failed to wake up", flush=True)
+            print(f"DEBUG:   - TA Service: {'✓ Ready' if ta_success else '✗ Failed'}", flush=True)
+            print(f"DEBUG:   - FA Service: {'✓ Ready' if fa_success else '✗ Failed'}", flush=True)
+        
+        print("DEBUG: ========================================", flush=True)
     
     # Run in background thread
-    threading.Thread(target=ping_all, daemon=True).start()
+    threading.Thread(target=wake_all_services, daemon=True).start()
+    print("DEBUG: Wake-up thread started in background", flush=True)
 
 class CryptoMarketFacade:
     def __init__(self, data_dir):

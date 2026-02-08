@@ -54,6 +54,23 @@
       </div>
       <a href="/" class="btn btn-outline-secondary">← Back</a>
     </div>
+
+    <!-- Service Status Alert -->
+    {% if service_status.wakeup_in_progress %}
+    <div class="alert alert-info alert-dismissible fade show" role="alert">
+      <strong>⏳ Services are waking up...</strong> Please wait a moment while our microservices start. This happens when the app is accessed after a period of inactivity.
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% elif not service_status.ta_ready or not service_status.fa_ready %}
+    <div class="alert alert-warning alert-dismissible fade show" role="alert">
+      <strong>⚠️ Some services are still starting...</strong>
+      {% if not service_status.ta_ready %}Technical Analysis{% endif %}
+      {% if not service_status.ta_ready and not service_status.fa_ready %} and {% endif %}
+      {% if not service_status.fa_ready %}Fundamental Analysis{% endif %}
+      may show limited data. The page will update automatically once services are ready.
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endif %}
     <!-- TECHNICAL BUY / SELL / HOLD SIGNALS -->
     <div class="card shadow-sm mb-4">
       <div class="card-header bg-white">

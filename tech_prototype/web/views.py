@@ -3,7 +3,7 @@ from django.contrib import messages
 import os
 import sys
 import requests
-from .facade import CryptoMarketFacade, wake_up_services_async
+from .facade import CryptoMarketFacade, wake_up_services_async, get_service_status
 
 BASE_DIR_OF_DJANGO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(BASE_DIR_OF_DJANGO)
@@ -62,7 +62,8 @@ def detail(request, symbol):
     if error:
         return render(request, 'detail.html', {
             'symbol': symbol,
-            'error': error
+            'error': error,
+            'service_status': get_service_status()
         })
     
     # LSTM Предвидување - Call external service
@@ -102,6 +103,7 @@ def detail(request, symbol):
     # Додавање на LSTM резултати во context
     context['ai_prediction_result'] = ai_prediction_result
     context['ai_error'] = ai_error
+    context['service_status'] = get_service_status()
         
     # Validating context data before render
     print(f"DEBUG: context keys: {list(context.keys())}", flush=True)
