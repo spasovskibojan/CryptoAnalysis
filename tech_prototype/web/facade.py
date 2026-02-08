@@ -98,17 +98,18 @@ def wake_up_services_async():
         print("DEBUG: ========================================", flush=True)
         
         # Wake both services in parallel
+        # Using root endpoint (/) instead of /health because it reliably triggers Render's wake-up
         with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
             ta_future = executor.submit(
                 trigger_and_wait, 
-                f"{TA_SERVICE_URL}/health", 
+                f"{TA_SERVICE_URL}/", 
                 "TA Service",
                 "ta_ready",
                 60  # Wait 60 seconds for boot
             )
             fa_future = executor.submit(
                 trigger_and_wait, 
-                f"{FA_SERVICE_URL}/health", 
+                f"{FA_SERVICE_URL}/", 
                 "FA Service",
                 "fa_ready",
                 60  # Wait 60 seconds for boot
