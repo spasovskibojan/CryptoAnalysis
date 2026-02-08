@@ -31,9 +31,9 @@ def get_service_status():
 
 def wake_up_services_async():
     """
-    Persistently wake up TA and FA services with retry logic.
-    Non-blocking - runs in background and updates service status.
-    Retries for up to 60 seconds until services respond with 200 OK.
+    Wake up TA and FA services by triggering a single request, then waiting.
+    Strategy: Send one wake-up ping (triggers Render to boot), wait 60s, check once.
+    This avoids Render's rate limiting (429 errors) from excessive retries.
     """
     global _service_status
     import threading
@@ -52,34 +52,38 @@ def wake_up_services_async():
             print(f"DEBUG: Services were woken {time_since_last.seconds}s ago, skipping...", flush=True)
             return
     
-    def ping_service_with_retry(url, name, status_key, max_attempts=12, retry_delay=5):
+    def trigger_and_wait(url, name, status_key, wait_time=60):
         """
-        Persistently ping service until it responds successfully.
-        max_attempts * retry_delay = total wait time (12 * 5 = 60 seconds)
+        Trigger service wake-up with one request, wait for boot time, then verify.
+        wait_time: seconds to wait before checking (default 60s for Render free tier)
         """
-        print(f"DEBUG: Starting wake-up sequence for {name}...", flush=True)
+        print(f"DEBUG: Triggering wake-up for {name}...", flush=True)
         
-        for attempt in range(1, max_attempts + 1):
-            try:
-                response = requests.get(url, timeout=10)
-                if response.status_code == 200:
-                    print(f"DEBUG: ✓ {name} is READY (attempt {attempt})", flush=True)
-                    _service_status[status_key] = True
-                    return True
-                else:
-                    print(f"DEBUG: {name} responded with {response.status_code} (attempt {attempt}/{max_attempts})", flush=True)
-            except requests.exceptions.Timeout:
-                print(f"DEBUG: {name} timeout (attempt {attempt}/{max_attempts})", flush=True)
-            except requests.exceptions.ConnectionError:
-                print(f"DEBUG: {name} connection refused - still booting (attempt {attempt}/{max_attempts})", flush=True)
-            except Exception as e:
-                print(f"DEBUG: {name} error: {e} (attempt {attempt}/{max_attempts})", flush=True)
-            
-            if attempt < max_attempts:
-                time.sleep(retry_delay)
+        # Step 1: Send initial wake-up trigger (this starts Render's boot process)
+        try:
+            requests.get(url, timeout=5)
+            print(f"DEBUG: Wake-up request sent to {name}", flush=True)
+        except:
+            # Expected - service is asleep and will start booting now
+            print(f"DEBUG: {name} is booting (expected behavior)...", flush=True)
         
-        print(f"DEBUG: ✗ {name} did not respond after {max_attempts} attempts", flush=True)
-        return False
+        # Step 2: Wait for service to fully boot
+        print(f"DEBUG: Waiting {wait_time}s for {name} to boot...", flush=True)
+        time.sleep(wait_time)
+        
+        # Step 3: Verify service is ready with one final health check
+        try:
+            response = requests.get(url, timeout=10)
+            if response.status_code == 200:
+                print(f"DEBUG: ✓ {name} is READY!", flush=True)
+                _service_status[status_key] = True
+                return True
+            else:
+                print(f"DEBUG: ✗ {name} responded with {response.status_code} (may need more time)", flush=True)
+                return False
+        except Exception as e:
+            print(f"DEBUG: ✗ {name} health check failed: {e}", flush=True)
+            return False
     
     def wake_all_services():
         global _service_status
@@ -90,21 +94,24 @@ def wake_up_services_async():
         
         print("DEBUG: ========================================", flush=True)
         print("DEBUG: Starting service wake-up sequence...", flush=True)
+        print("DEBUG: Strategy: Trigger once, wait 60s, verify once", flush=True)
         print("DEBUG: ========================================", flush=True)
         
         # Wake both services in parallel
         with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
             ta_future = executor.submit(
-                ping_service_with_retry, 
+                trigger_and_wait, 
                 f"{TA_SERVICE_URL}/health", 
                 "TA Service",
-                "ta_ready"
+                "ta_ready",
+                60  # Wait 60 seconds for boot
             )
             fa_future = executor.submit(
-                ping_service_with_retry, 
+                trigger_and_wait, 
                 f"{FA_SERVICE_URL}/health", 
                 "FA Service",
-                "fa_ready"
+                "fa_ready",
+                60  # Wait 60 seconds for boot
             )
             
             # Wait for both to complete
@@ -114,11 +121,11 @@ def wake_up_services_async():
         _service_status['wakeup_in_progress'] = False
         
         if ta_success and fa_success:
-            print("DEBUG: ✓ All services are READY!", flush=True)
+            print("DEBUG: ✓✓✓ All services are READY! ✓✓✓", flush=True)
         else:
-            print("DEBUG: ⚠ Some services failed to wake up", flush=True)
-            print(f"DEBUG:   - TA Service: {'✓ Ready' if ta_success else '✗ Failed'}", flush=True)
-            print(f"DEBUG:   - FA Service: {'✓ Ready' if fa_success else '✗ Failed'}", flush=True)
+            print("DEBUG: ⚠ Some services did not respond", flush=True)
+            print(f"DEBUG:   - TA Service: {'✓ Ready' if ta_success else '✗ Not Ready'}", flush=True)
+            print(f"DEBUG:   - FA Service: {'✓ Ready' if fa_success else '✗ Not Ready'}", flush=True)
         
         print("DEBUG: ========================================", flush=True)
     
