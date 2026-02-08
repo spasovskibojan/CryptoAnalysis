@@ -58,22 +58,28 @@ def wake_up_services_async():
         wait_time: seconds to wait before checking (default 60s for Render free tier)
         """
         print(f"DEBUG: Triggering wake-up for {name}...", flush=True)
+        print(f"DEBUG: Target URL: {url}", flush=True)  # Log the exact URL
         
         # Step 1: Send initial wake-up trigger (this starts Render's boot process)
         try:
-            requests.get(url, timeout=5)
-            print(f"DEBUG: Wake-up request sent to {name}", flush=True)
-        except:
-            # Expected - service is asleep and will start booting now
-            print(f"DEBUG: {name} is booting (expected behavior)...", flush=True)
+            response = requests.get(url, timeout=5)
+            print(f"DEBUG: Wake-up request sent to {name} - Status: {response.status_code}", flush=True)
+        except requests.exceptions.Timeout:
+            print(f"DEBUG: {name} timeout (expected - service is booting)...", flush=True)
+        except requests.exceptions.ConnectionError as e:
+            print(f"DEBUG: {name} connection error: {e} (expected - service is booting)...", flush=True)
+        except Exception as e:
+            print(f"DEBUG: {name} unexpected error: {type(e).__name__}: {e}", flush=True)
         
         # Step 2: Wait for service to fully boot
         print(f"DEBUG: Waiting {wait_time}s for {name} to boot...", flush=True)
         time.sleep(wait_time)
         
         # Step 3: Verify service is ready with one final health check
+        print(f"DEBUG: Checking if {name} is ready at {url}...", flush=True)
         try:
             response = requests.get(url, timeout=10)
+            print(f"DEBUG: {name} health check response: {response.status_code}", flush=True)
             if response.status_code == 200:
                 print(f"DEBUG: ✓ {name} is READY!", flush=True)
                 _service_status[status_key] = True
@@ -82,7 +88,7 @@ def wake_up_services_async():
                 print(f"DEBUG: ✗ {name} responded with {response.status_code} (may need more time)", flush=True)
                 return False
         except Exception as e:
-            print(f"DEBUG: ✗ {name} health check failed: {e}", flush=True)
+            print(f"DEBUG: ✗ {name} health check failed: {type(e).__name__}: {e}", flush=True)
             return False
     
     def wake_all_services():
